@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-package Set::KdIntervalTree;
+package Set::KdSegmentTree;
 
 require Exporter;
 
