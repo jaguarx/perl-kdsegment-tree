@@ -42,14 +42,14 @@ sub _bld_bintree {
 
     sub _leaf_min {
         my ($values, $len, $idx) = @_;
-        return _leaf_min($value, $len, 2*$idx) if (2 * $idx <= $len);
-        my $node = $value->[$idx];
+        return _leaf_min($values, $len, 2*$idx) if (2 * $idx <= $len);
+        my $node = $values->[$idx];
         return $node->[0];
     }
     sub _leaf_max {
         my ($values, $len, $idx) = @_; 
-        return _leaf_max($value, $len, 2*$idx+1) if (2 * $idx + 1<= $len);
-        my $node = $value->[$idx];
+        return _leaf_max($values, $len, 2*$idx+1) if (2 * $idx + 1<= $len);
+        my $node = $values->[$idx];
         return $node->[0];
     }
     map {
@@ -73,11 +73,14 @@ sub _add_val {
     my $node = $bin_tree->[ $idx];
     my $len  = $bin_tree->[0];
     my $sep  = $node->[0];
+    $min = $node->[3];
+    $max = $node->[4];
 
     if ($idx > $len) {
         return;
     }
 
+    printf("_add_val: %2d [%2d %2d %2d]\n", $idx, $min, $sep, $max);
     if ( $a == $sep and $sep == $b) {
         #only one node
         $node->[2] = [] if (0 eq $node->[2]);
@@ -172,7 +175,7 @@ sub make_tree {
 }
 
 sub _query_tree {
-    my ($tree, $lvl, $points) = @_;
+    my ($tree, $max_lvl, $lvl, $points) = @_;
     my $loc = $points->[$lvl];
     my @ret = ();
     my @que = (1);
@@ -183,6 +186,7 @@ sub _query_tree {
         my $sep = $node->[0];
         my $min = $node->[3];
         my $max = $node->[4];
+        printf(" %2d:[%2d,%2d,%2d]\n", $idx, $min, $sep, $max);
         if ($min <= $loc and $loc <= $max) {
             if (defined($node->[1]) and (0 != $node->[1])) {
                 if ($lvl+1 < $max_lvl) {
@@ -217,14 +221,14 @@ sub query_point {
     my $subtree = $self->{subtree};
     my $max_lvl = $self->{max_level};
     my @que = ();
-    my @ret = {};
+    my $ret = {};
     my $debug = $self->{debug};
     push(@que, [$subtree, 0]);
     while ( scalar(@que) > 0 ) {
         my $item = pop(@que);
         my $tree = $item->[0];
         my $lvl  = $item->[1];
-        my $trees = _query_tree($tree, $lvl, $points);
+        my $trees = _query_tree($tree, $max_lvl, $lvl, $points);
         map {
             if ($lvl+1 < $max_lvl) {
                 printf(" %8x : %d lvl\n", $_, $lvl+1) if $debug;
@@ -236,10 +240,10 @@ sub query_point {
         } @$trees;
     }
     my @boxes = values %$ret;
-    return \@ret;
+    return \@boxes;
 }
 
-sub debug_dump {
+sub debug_dump_tree {
     my ($self) = @_;
 
     my $values = $self->{values};
